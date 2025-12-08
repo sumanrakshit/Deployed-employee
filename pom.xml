@@ -88,6 +88,8 @@
 				</configuration>
 			</plugin>
 		</plugins>
+
+		<finalName>employee-image-latest</finalName>
 	</build>
 
 </project>
