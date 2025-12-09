@@ -8,6 +8,8 @@ public class DeployementApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(DeployementApplication.class, args);
+		System.out.println("test");
+
 	}
 
 }
