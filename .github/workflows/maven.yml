@@ -8,10 +8,8 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
-    # Start MySQL for this job
     services:
       mysql:
         image: mysql:8.0
@@ -26,7 +24,6 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-    # These env vars override Spring Boot properties during CI
     env:
       SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/employeedepdb
       SPRING_DATASOURCE_USERNAME: root
@@ -43,7 +40,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Optional: wait a bit to be extra safe that MySQL is up
       - name: Wait for MySQL
         run: |
           for i in {1..15}; do
@@ -67,3 +63,28 @@ jobs:
           dockerfile: Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+  deploy-to-kubernetes:
+    needs: build      # run only after build job success
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (for k8s manifests)
+        uses: actions/checkout@v4
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+
+      - name: Show cluster info (optional)
+        run: kubectl cluster-info
+
+      - name: Deploy MySQL to Kubernetes
+        run: |
+          kubectl apply -f k8s/mysql.yml
+
+      - name: Deploy Employee app to Kubernetes
+        run: |
+          kubectl apply -f k8s/employee-app.yml
+          kubectl rollout status deployment/employee-app
